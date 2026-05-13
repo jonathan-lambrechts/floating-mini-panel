@@ -290,14 +290,14 @@ export const ControlButton = GObject.registerClass(
 
             this._parent = parent;
 
-            this.add_child(
-                new St.Icon({
-                    icon_name: 'list-drag-handle-symbolic',
-                    style_class: 'system-status-icon',
-                    x_expand: true,
-                    x_align: Clutter.ActorAlign.CENTER,
-                })
-            );
+            this._icon = new St.Icon({
+                icon_name: 'list-drag-handle-symbolic',
+                style_class: 'system-status-icon',
+                x_expand: true,
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+            this._icon.set_pivot_point(0.5, 0.5);
+            this.add_child(this._icon);
 
             // Control Menu
             this.menu = new PopupMenu.PopupMenu(this, 0.5, St.Side.TOP);
@@ -408,10 +408,12 @@ export const ControlButton = GObject.registerClass(
                         this.ltTxt = 'Left';
                         this.rbTxt = 'Right';
                         this.menu._boxPointer._userArrowSide = St.Side.LEFT;
+                        this._icon.rotation_angle_z = 90;
                     } else {
                         this.ltTxt = 'Top';
                         this.rbTxt = 'Bottom';
                         this.menu._boxPointer._userArrowSide = St.Side.TOP;
+                        this._icon.rotation_angle_z = 0;
                     }
                     let items = this.menu._getMenuItems();
                     items[1].side.text = this.ltTxt + ' - Start';
