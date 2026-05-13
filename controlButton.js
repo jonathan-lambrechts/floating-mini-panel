@@ -289,15 +289,10 @@ export const ControlButton = GObject.registerClass(
             });
 
             this._parent = parent;
-
-            this._icon = new St.Icon({
-                icon_name: 'list-drag-handle-symbolic',
-                style_class: 'system-status-icon',
-                x_expand: true,
-                x_align: Clutter.ActorAlign.CENTER,
-            });
-            this._icon.set_pivot_point(0.5, 0.5);
-            this.add_child(this._icon);
+            this.orientStr = shellVersion > 47 ? 'orientation' : 'vertical';
+            this._wsConId = null;
+            this._setsConId = null;
+            this._updateDisplay();
 
             // Control Menu
             this.menu = new PopupMenu.PopupMenu(this, 0.5, St.Side.TOP);
@@ -384,6 +379,14 @@ export const ControlButton = GObject.registerClass(
                 })
             );
             this.menu.addMenuItem(
+                new MenuItem('Toggle Workspace Number', '', () => {
+                    this._parent._sets.set_boolean(
+                        'show-workspace-number',
+                        !this._parent._sets.get_boolean('show-workspace-number')
+                    );
+                })
+            );
+            this.menu.addMenuItem(
                 new MenuItem('Toggle Menu', 'Right LongPress', () => {})
             );
 
@@ -397,7 +400,6 @@ export const ControlButton = GObject.registerClass(
             });
 
             // START CODE VERTICAL
-            this.orientStr = shellVersion > 47 ? 'orientation' : 'vertical';
             this._parent.bind_property_full(
                 this.orientStr,
                 this,
@@ -408,12 +410,12 @@ export const ControlButton = GObject.registerClass(
                         this.ltTxt = 'Left';
                         this.rbTxt = 'Right';
                         this.menu._boxPointer._userArrowSide = St.Side.LEFT;
-                        this._icon.rotation_angle_z = 90;
+                        if (this._icon) this._icon.rotation_angle_z = 90;
                     } else {
                         this.ltTxt = 'Top';
                         this.rbTxt = 'Bottom';
                         this.menu._boxPointer._userArrowSide = St.Side.TOP;
-                        this._icon.rotation_angle_z = 0;
+                        if (this._icon) this._icon.rotation_angle_z = 0;
                     }
                     let items = this.menu._getMenuItems();
                     items[1].side.text = this.ltTxt + ' - Start';
@@ -427,12 +429,64 @@ export const ControlButton = GObject.registerClass(
                 null
             );
 
+            this._setsConId = this._parent._sets.connect(
+                'changed::show-workspace-number',
+                () => this._updateDisplay()
+            );
+
             // Handling for GNOME 46, 47, 48, 49
             this.add_action(new CtlActions(this));
 
             this.connect('scroll-event', (obj, event) => {
                 Main.wm.handleWorkspaceScroll(event);
             });
+        }
+
+        _updateDisplay() {
+            if (this._icon) {
+                this._icon.destroy();
+                this._icon = null;
+            }
+            if (this._wsNumLabel) {
+                this._wsNumLabel.destroy();
+                this._wsNumLabel = null;
+            }
+            if (this._parent._sets.get_boolean('show-workspace-number')) {
+                this.style_class = 'button btn';
+                this._wsNumLabel = new St.Label({
+                    text: String(global.workspace_manager.get_active_workspace_index() + 1),
+                    x_expand: true,
+                    x_align: Clutter.ActorAlign.CENTER,
+                    y_expand: true,
+                    y_align: Clutter.ActorAlign.CENTER,
+                });
+                this.add_child(this._wsNumLabel);
+                if (!this._wsConId) {
+                    this._wsConId = global.workspace_manager.connect(
+                        'active-workspace-changed',
+                        () => {
+                            this._wsNumLabel.text = String(
+                                global.workspace_manager.get_active_workspace_index() + 1
+                            );
+                        }
+                    );
+                }
+            } else {
+                this.style_class = 'button ctlBtn';
+                if (this._wsConId) {
+                    global.workspace_manager.disconnect(this._wsConId);
+                    this._wsConId = null;
+                }
+                this._icon = new St.Icon({
+                    icon_name: 'list-drag-handle-symbolic',
+                    style_class: 'system-status-icon',
+                    x_expand: true,
+                    x_align: Clutter.ActorAlign.CENTER,
+                });
+                this._icon.set_pivot_point(0.5, 0.5);
+                this._icon.rotation_angle_z = this[this.orientStr] ? 90 : 0;
+                this.add_child(this._icon);
+            }
         }
 
         _doAlign(align) {
@@ -469,6 +523,14 @@ export const ControlButton = GObject.registerClass(
             if (this._timeoutId) {
                 GLib.Source.remove(this._timeoutId);
                 this._timeoutId = null;
+            }
+            if (this._setsConId) {
+                this._parent._sets.disconnect(this._setsConId);
+                this._setsConId = null;
+            }
+            if (this._wsConId) {
+                global.workspace_manager.disconnect(this._wsConId);
+                this._wsConId = null;
             }
             super.destroy();
         }

@@ -50,5 +50,19 @@
         Always visible 3rd party extension indicators.
       </description>
     </key>
+    <key name="show-workspace-number" type="b">
+      <default>false</default>
+      <summary>Show Workspace Number</summary>
+      <description>
+        Replace the handle icon with the current workspace number.
+      </description>
+    </key>
+    <key name="toggle-panel" type="as">
+      <default>['&lt;Super&gt;b']</default>
+      <summary>Toggle Panel</summary>
+      <description>
+        Keyboard shortcut to show/hide the floating mini panel.
+      </description>
+    </key>
   </schema>
 </schemalist>
