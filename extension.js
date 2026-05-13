@@ -25,6 +25,7 @@ import GObject from 'gi://GObject';
 // Issue #10
 import Meta from 'gi://Meta';
 import Mtk from 'gi://Mtk';
+import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import * as Config from 'resource:///org/gnome/shell/misc/config.js';
@@ -441,6 +442,21 @@ const FloatingMiniPanel = GObject.registerClass(
                 return Clutter.Event_PROPAGATE;
             });
 
+            // Super+B shortcut to show/hide the panel
+            Main.wm.addKeybinding(
+                'toggle-panel',
+                this._sets,
+                Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
+                Shell.ActionMode.NORMAL,
+                () => {
+                    if (this.visible) {
+                        this.visible = false;
+                    } else {
+                        this.visible = true;
+                    }
+                }
+            );
+
             // Recognize Suspend
             this._loginManager = LoginManager.getLoginManager();
             this._lpConId = this._loginManager.connect(
@@ -683,6 +699,8 @@ const FloatingMiniPanel = GObject.registerClass(
 
         destroy() {
             this._hideFloatingMiniPanel();
+
+            Main.wm.removeKeybinding('toggle-panel');
 
             this._ctlBtn.destroy();
             this._indsDrawer.destroy();
