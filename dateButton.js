@@ -97,27 +97,15 @@ export const DateButton = GObject.registerClass(
 
             // START CODE VERTICAL
             function formatDate(vertical) {
-                let dateStr = DATEMENU._clockDisplay.text;
                 if (vertical) {
-                    // Divide date from time and replace spaces with newlines
-                    dateStr = dateStr
-                        .replace(/\u2002/g, '\n――\n')
-                        .replace(/\s/g, '\n');
-                    // Seconds are active
-                    if (
-                        dateStr.split(':').length > 2 ||
-                        dateStr.split('∶').length > 2
-                    ) {
-                        dateStr = dateStr.replace(/:|∶/g, '\n𐤟 𐤟\n');
-                    } else {
-                        dateStr = dateStr.replace(/\n――/g, '');
-                    }
-                    // If 12h mode
-                    dateStr = dateStr.replace(/\n\n/g, '\n');
-                    // If 12h mode and time only
-                    if (dateStr[0] === '\n') dateStr = dateStr.substring(1);
+                    const now = GLib.DateTime.new_now_local();
+                    const day   = String(now.get_day_of_month()).padStart(2, '0');
+                    const month = String(now.get_month()).padStart(2, '0');
+                    const hour  = String(now.get_hour()).padStart(2, '0');
+                    const min   = String(now.get_minute()).padStart(2, '0');
+                    return `${day}\n──\n${month}\n\n${hour}\n··\n${min}`;
                 }
-                return dateStr;
+                return DATEMENU._clockDisplay.text;
             }
 
             this._dateLabel = new St.Label({
